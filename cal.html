@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USF Schedule to Calendar Converter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .description {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .input-section {
+            margin-bottom: 30px;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #555;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .output-section {
+            margin-top: 40px;
+            display: none;
+        }
+        .preview-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+        .code-section {
+            margin-top: 30px;
+        }
+        .code-output {
+            width: 100%;
+            height: 300px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            background-color: #f8f9fa;
+        }
+        .copy-button {
+            background-color: #007bff;
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+        .copy-button:hover {
+            background-color: #0056b3;
+        }
+        .info-box {
+            background-color: #e7f3ff;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📅 Schedule to Calendar Converter</h1>
+        <p class="description">Convert your meeting schedule into a formatted HTML calendar with automatic skip week detection.</p>
+        
+        <div class="info-box">
+            <strong>How it works:</strong> Paste your schedule data below (from Excel or text), and this tool will:
+            <ul style="margin: 10px 0 0 0;">
+                <li>Parse the meeting dates and times</li>
+                <li>Detect patterns (e.g., weekly meetings on the same day)</li>
+                <li>Identify and highlight "skip weeks" where meetings would normally occur</li>
+                <li>Generate a 3-month calendar view with proper styling</li>
+            </ul>
+        </div>
+
+        <div class="input-section">
+            <label for="scheduleInput">Paste your schedule data here:</label>
+            <textarea id="scheduleInput" placeholder="Wednesday, June 18, 2025		9:00am - 12:00pm EST
+Wednesday, June 25, 2025		9:00am - 12:00pm EST
+Wednesday, July 2, 2025		9:00am - 12:00pm EST
+..."></textarea>
+            <button onclick="convertSchedule()">Generate Calendar HTML</button>
+        </div>
+
+        <div id="outputSection" class="output-section">
+            <h2>📋 Preview</h2>
+            <div class="preview-section" id="previewSection"></div>
+
+            <div class="code-section">
+                <h2>💻 HTML Code</h2>
+                <p style="color: #666;">Copy this code and paste it into your LMS:</p>
+                <textarea class="code-output" id="codeOutput" readonly></textarea>
+                <button class="copy-button" onclick="copyCode()">Copy HTML Code</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function parseSchedule(text) {
+            const lines = text.trim().split('\n');
+            const meetings = [];
+            
+            lines.forEach(line => {
+                if (!line.trim()) return;
+                
+                // Parse date - handles various formats
+                const dateMatch = line.match(/(\w+),\s+(\w+)\s+(\d+),\s+(\d{4})/);
+                if (dateMatch) {
+                    const [_, dayName, monthName, day, year] = dateMatch;
+                    const monthMap = {
+                        'January': 0, 'February': 1, 'March': 2, 'April': 3,
+                        'May': 4, 'June': 5, 'July': 6, 'August': 7,
+                        'September': 8, 'October': 9, 'November': 10, 'December': 11
+                    };
+                    
+                    const date = new Date(parseInt(year), monthMap[monthName], parseInt(day));
+                    
+                    // Extract time - handle tabs or multiple spaces
+                    const timePart = line.substring(dateMatch[0].length).trim();
+                    
+                    meetings.push({
+                        date: date,
+                        dayOfWeek: date.getDay(),
+                        time: timePart || 'TBD'
+                    });
+                }
+            });
+            
+            return meetings.sort((a, b) => a.date - b.date);
+        }
+
+        function detectSkipDates(meetings) {
+            if (meetings.length < 2) return [];
+            
+            const skipDates = [];
+            
+            // Group meetings by day of week
+            const dayGroups = {};
+            meetings.forEach(meeting => {
+                const dow = meeting.dayOfWeek;
+                if (!dayGroups[dow]) dayGroups[dow] = [];
+                dayGroups[dow].push(meeting);
+            });
+            
+            // Find the most common day of week
+            let mostCommonDay = -1;
+            let maxCount = 0;
+            for (const [day, group] of Object.entries(dayGroups)) {
+                if (group.length > maxCount) {
+                    maxCount = group.length;
+                    mostCommonDay = parseInt(day);
+                }
+            }
+            
+            // Check for weekly pattern gaps
+            const sortedMeetings = dayGroups[mostCommonDay];
+            for (let i = 0; i < sortedMeetings.length - 1; i++) {
+                const current = sortedMeetings[i].date;
+                const next = sortedMeetings[i + 1].date;
+                
+                // Check each week between current and next
+                let checkDate = new Date(current);
+                checkDate.setDate(checkDate.getDate() + 7);
+                
+                while (checkDate < next) {
+                    skipDates.push(new Date(checkDate));
+                    checkDate.setDate(checkDate.getDate() + 7);
+                }
+            }
+            
+            return skipDates;
+        }
+
+        function generateCalendarHTML(meetings, skipDates) {
+            if (meetings.length === 0) return '';
+            
+            // Find date range
+            const firstDate = meetings[0].date;
+            const lastDate = meetings[meetings.length - 1].date;
+            
+            // Determine months to display
+            const months = [];
+            let currentMonth = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1);
+            const endMonth = new Date(lastDate.getFullYear(), lastDate.getMonth(), 1);
+            
+            while (currentMonth <= endMonth) {
+                months.push(new Date(currentMonth));
+                currentMonth.setMonth(currentMonth.getMonth() + 1);
+            }
+            
+            // Generate HTML
+            let html = '<div style="font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px;">\n';
+            html += '  <h2 style="text-align: center; color: #333; margin-bottom: 30px;">Upcoming Meeting Schedule</h2>\n';
+            html += '  <div style="display: flex; flex-wrap: wrap; gap: 30px; justify-content: center;">\n';
+            
+            months.forEach(month => {
+                html += generateMonthHTML(month, meetings, skipDates);
+            });
+            
+            html += '  </div>\n';
+            html += '</div>';
+            
+            return html;
+        }
+
+        function generateMonthHTML(monthDate, meetings, skipDates) {
+            const year = monthDate.getFullYear();
+            const month = monthDate.getMonth();
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                               'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            // Get first day of month and number of days
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const daysInPrevMonth = new Date(year, month, 0).getDate();
+            
+            let html = '    <div style="width: 460px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 20px;">\n';
+            html += `      <h3 style="text-align: center; color: #333; margin-bottom: 20px;">${monthNames[month]} ${year}</h3>\n`;
+            html += '      <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">\n';
+            html += '        <thead>\n';
+            html += '          <tr>\n';
+            
+            const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            dayHeaders.forEach(day => {
+                html += `            <th style="padding: 10px 5px; text-align: center; font-weight: bold; color: #555; font-size: 14px;">${day}</th>\n`;
+            });
+            
+            html += '          </tr>\n';
+            html += '        </thead>\n';
+            html += '        <tbody>\n';
+            
+            let dayCounter = 1;
+            let prevMonthDay = daysInPrevMonth - firstDay + 1;
+            
+            for (let week = 0; week < 6; week++) {
+                if (dayCounter > daysInMonth) break;
+                
+                html += '          <tr>\n';
+                
+                for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+                    let cellContent = '';
+                    let cellStyle = 'padding: 8px 5px; text-align: center; border: 1px solid #e0e0e0; height: 70px; vertical-align: top; position: relative;';
+                    
+                    if (week === 0 && dayOfWeek < firstDay) {
+                        // Previous month days
+                        cellContent = `<div style="color: #aaa; font-size: 14px;">${prevMonthDay}</div>`;
+                        cellStyle += ' background-color: #f0f0f0;';
+                        prevMonthDay++;
+                    } else if (dayCounter <= daysInMonth) {
+                        // Current month days
+                        const currentDate = new Date(year, month, dayCounter);
+                        const isMeeting = meetings.some(m => 
+                            m.date.getFullYear() === currentDate.getFullYear() &&
+                            m.date.getMonth() === currentDate.getMonth() &&
+                            m.date.getDate() === currentDate.getDate()
+                        );
+                        const isSkip = skipDates.some(d => 
+                            d.getFullYear() === currentDate.getFullYear() &&
+                            d.getMonth() === currentDate.getMonth() &&
+                            d.getDate() === currentDate.getDate()
+                        );
+                        
+                        if (isMeeting) {
+                            cellStyle += ' background-color: #d4edda; border-left: 4px solid #28a745;';
+                            cellContent = `<div style="font-weight: bold; font-size: 14px; margin-bottom: 2px;">${dayCounter}</div>`;
+                            const meeting = meetings.find(m => 
+                                m.date.getFullYear() === currentDate.getFullYear() &&
+                                m.date.getMonth() === currentDate.getMonth() &&
+                                m.date.getDate() === currentDate.getDate()
+                            );
+                            // Compact time format
+                            let timeDisplay = meeting.time;
+                            // Remove "EST" and make more compact
+                            timeDisplay = timeDisplay.replace(' EST', '').replace(' - ', '-');
+                            cellContent += `<div style="font-size: 9px; color: #28a745; line-height: 1.1; overflow: hidden; text-overflow: ellipsis;">${timeDisplay}</div>`;
+                        } else if (isSkip) {
+                            cellStyle += ' background-color: #ffeeba; border-left: 4px solid #ffc107;';
+                            cellContent = `<div style="font-weight: bold; font-size: 14px; margin-bottom: 2px;">${dayCounter}</div>`;
+                            cellContent += '<div style="font-size: 11px; color: #856404;">Skip Week</div>';
+                        } else {
+                            cellContent = `<div style="font-size: 14px;">${dayCounter}</div>`;
+                        }
+                        
+                        dayCounter++;
+                    } else {
+                        // Next month days
+                        cellContent = `<div style="color: #aaa; font-size: 14px;">${dayCounter - daysInMonth}</div>`;
+                        cellStyle += ' background-color: #f0f0f0;';
+                        dayCounter++;
+                    }
+                    
+                    html += `            <td style="${cellStyle}">${cellContent}</td>\n`;
+                }
+                
+                html += '          </tr>\n';
+            }
+            
+            html += '        </tbody>\n';
+            html += '      </table>\n';
+            html += '    </div>\n';
+            
+            return html;
+        }
+
+        function convertSchedule() {
+            const input = document.getElementById('scheduleInput').value;
+            if (!input.trim()) {
+                alert('Please paste your schedule data first.');
+                return;
+            }
+            
+            const meetings = parseSchedule(input);
+            const skipDates = detectSkipDates(meetings);
+            const html = generateCalendarHTML(meetings, skipDates);
+            
+            if (html) {
+                document.getElementById('previewSection').innerHTML = html;
+                document.getElementById('codeOutput').value = html;
+                document.getElementById('outputSection').style.display = 'block';
+                
+                // Scroll to output
+                document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth' });
+            } else {
+                alert('No valid meeting dates found in the input.');
+            }
+        }
+
+        function copyCode() {
+            const codeOutput = document.getElementById('codeOutput');
+            codeOutput.select();
+            document.execCommand('copy');
+            
+            // Change button text temporarily
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Copied!';
+            button.style.backgroundColor = '#28a745';
+            
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.style.backgroundColor = '#007bff';
+            }, 2000);
+        }
+
+        // Pre-fill with sample data
+        document.getElementById('scheduleInput').value = `Wednesday, June 18, 2025		9:00am - 12:00pm EST
+Wednesday, June 25, 2025		9:00am - 12:00pm EST
+Wednesday, July 2, 2025		9:00am - 12:00pm EST
+Wednesday, July 9, 2025		9:00am - 12:00pm EST
+Wednesday, July 23, 2025		9:00am - 12:00pm EST
+Wednesday, July 30, 2025		9:00am - 12:00pm EST
+Wednesday, August 6, 2025		9:00am - 12:00pm EST
+Wednesday, August 13, 2025		9:00am - 12:00pm EST
+Wednesday, August 20, 2025		9:00am - 12:00pm EST
+Wednesday, August 27, 2025		9:00am - 12:00pm EST`;
+    </script>
+</body>
+</html>
