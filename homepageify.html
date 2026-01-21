@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OLLI Course HTML Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #80B0A6; /* User-specified color */
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e0e0e0; /* Clean, subtle border */
+            overflow: hidden;
+        }
+        
+        .header {
+            background: #006747; /* Solid color matching theme */
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .form-section {
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        input[type="text"],
+        input[type="url"],
+        textarea,
+        input[type="date"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus,
+        input[type="url"]:focus,
+        textarea:focus,
+        input[type="date"]:focus {
+            outline: none;
+            border-color: #006747;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .schedule-entry {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 3px solid #006747;
+        }
+        
+        .schedule-entry input {
+            margin-bottom: 8px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #006747 0%, #004d33 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 103, 71, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            margin-left: 10px;
+        }
+        
+        .btn.copied {
+            background: #28a745;
+            animation: pulse 0.3s ease-in-out;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .output-section {
+            padding: 30px;
+            background: #f8f9fa;
+            display: none;
+        }
+        
+        .output-section.active {
+            display: block;
+        }
+        
+        .output-box {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 20px;
+            margin-top: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .output-box pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        
+        .button-group {
+            margin-top: 20px;
+        }
+        
+        .small-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>OLLI Course HTML Generator</h1>
+            <p>Fill in the course details below to generate formatted HTML for your business system</p>
+        </div>
+        
+        <div class="form-section">
+            <form id="courseForm">
+                <div class="form-group">
+                    <label for="title">Course Title</label>
+                    <input type="text" id="title" placeholder="e.g., Introduction to Digital Photography" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="locationName">Location Name</label>
+                    <input type="text" id="locationName" placeholder="e.g., USF Tampa Campus" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="googleMapUrl">Google Maps URL</label>
+                    <input type="url" id="googleMapUrl" placeholder="e.g., https://maps.google.com/?q=..." required>
+                    <p class="small-text">Right-click on Google Maps and select "Share" to get the URL</p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="locationStreet">Street Address</label>
+                    <input type="text" id="locationStreet" placeholder="e.g., 4202 E Fowler Ave" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="locationCityStateZip">City, State ZIP</label>
+                    <input type="text" id="locationCityStateZip" placeholder="e.g., Tampa, FL 33620" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Course Schedule</label>
+                    <p class="small-text">Add all class meeting dates and times</p>
+                    <div id="scheduleContainer">
+                        <div class="schedule-entry">
+                            <input type="text" placeholder="Day of Week (e.g., Monday)" class="dayOfWeek" required>
+                            <input type="date" class="dateNum" required>
+                            <input type="text" placeholder="Time Range (e.g., 10:00 AM - 12:00 PM)" class="timeRange" required>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-secondary" onclick="addScheduleEntry()">+ Add Another Date</button>
+                </div>
+                
+                <div class="button-group">
+                    <button type="submit" class="btn">Generate HTML</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="output-section" id="outputSection">
+            <h2 style="margin-bottom: 15px;">✅ Generated HTML</h2>
+            <p style="color: #666; margin-bottom: 10px;">Copy the HTML code below and paste it into your business system:</p>
+            <div class="output-box">
+                <pre id="outputHtml"></pre>
+            </div>
+            <div class="button-group">
+                <button class="btn" id="copyBtn" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
+                <button class="btn btn-secondary" onclick="resetForm()">← Create Another</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="margin-top: 40px;">
+        <div class="header">
+            <h1>Announcement Generator</h1>
+            <p>Use this form to generate a plain text announcement for email.</p>
+        </div>
+    
+        <div class="form-section">
+            <div class="form-group">
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input type="checkbox" id="announcementCheckbox" onchange="toggleAnnouncementForm()" style="width: auto; margin-right: 10px;">
+                    <strong>Create a New Announcement?</strong>
+                </label>
+            </div>
+    
+            <form id="announcementForm" style="display: none;">
+                <div class="form-group">
+                    <label for="announcementTitle">Course Title</label>
+                    <input type="text" id="announcementTitle" placeholder="e.g., Introduction to Digital Photography">
+                </div>
+                <div class="form-group">
+                    <label for="announcementStartDate">Start Date</label>
+                    <input type="text" id="announcementStartDate" placeholder="e.g., January 15, 2026">
+                </div>
+                <div class="form-group">
+                    <label for="announcementStartTime">Start Time</label>
+                    <input type="text" id="announcementStartTime" placeholder="e.g., 10:00 AM">
+                </div>
+    
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" id="northwesternCheckbox" onchange="toggleAnnouncementFields()" style="width: auto; margin-right: 10px;">
+                        Is this an Osher Online course (via Northwestern)?
+                    </label>
+                </div>
+                
+                <div id="f2f_fields">
+                    <div class="form-group">
+                        <label for="announcementLocationName">Location Name</label>
+                        <input type="text" id="announcementLocationName" placeholder="e.g., USF Tampa Campus">
+                    </div>
+                    <div class="form-group">
+                        <label for="announcementLocationAddress">Location Address</label>
+                        <input type="text" id="announcementLocationAddress" placeholder="e.g., 4202 E Fowler Ave, Tampa, FL 33620">
+                    </div>
+                    <div class="form-group">
+                        <label for="announcementMapUrl">Google Maps URL</label>
+                        <input type="url" id="announcementMapUrl" placeholder="e.g., https://maps.google.com/?q=...">
+                    </div>
+                    <div class="form-group">
+                        <label for="announcementParkingNotes">Parking Notes</label>
+                        <textarea id="announcementParkingNotes" placeholder="Enter parking notes here..."></textarea>
+                    </div>
+                </div>
+    
+                <div class="button-group">
+                    <button type="submit" class="btn">Generate Announcement</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="output-section" id="announcementOutputSection">
+             <h2 style="margin-bottom: 15px;">✅ Generated Announcement</h2>
+            <p style="color: #666; margin-bottom: 10px;">Copy the text below:</p>
+            <div class="output-box">
+                <pre id="announcementOutputText"></pre>
+            </div>
+            <div class="button-group">
+                <button class="btn" id="copyAnnouncementBtn" onclick="copyAnnouncementToClipboard()">📋 Copy to Clipboard</button>
+                <button class="btn btn-secondary" onclick="resetAnnouncementForm()">← Create Another</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="margin-top: 40px;">
+        <div class="header">
+            <h1>Course Code Generator</h1>
+        </div>
+    
+        <div class="form-section">
+            <div class="form-group">
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input type="checkbox" id="courseCodeCheckbox" onchange="toggleCourseCodeGenerator()" style="width: auto; margin-right: 10px;">
+                    <strong>Create Course Code?</strong>
+                </label>
+            </div>
+
+            <div id="courseCodeInputs" style="display: none;">
+                <div class="form-group">
+                    <label for="shortenedTitle">Shortened Title (e.g., INTRODIGIPH)</label>
+                    <input type="text" id="shortenedTitle" placeholder="Max 10 chars, no spaces" maxlength="10" oninput="generateCourseCode()">
+                </div>
+                <div class="form-group">
+                    <label for="shortenedLocation">Shortened Location (e.g., USFTAMPACA)</label>
+                    <input type="text" id="shortenedLocation" placeholder="Max 10 chars, no spaces" maxlength="10" oninput="generateCourseCode()">
+                </div>
+            </div>
+
+            <div class="output-section" id="courseCodeOutputSection">
+                <h2 style="margin-bottom: 15px;">✅ Generated Course Code</h2>
+                <div class="output-box">
+                    <pre id="courseCodeOutput"></pre>
+                </div>
+                <div class="button-group">
+                    <button class="btn" id="copyCourseCodeBtn" onclick="copyCourseCodeToClipboard()">📋 Copy to Clipboard</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function addScheduleEntry() {
+            const container = document.getElementById('scheduleContainer');
+            const lastEntry = container.querySelector('.schedule-entry:last-child');
+            
+            // Get values from the last entry
+            const lastDayOfWeek = lastEntry.querySelector('.dayOfWeek').value;
+            const lastTimeRange = lastEntry.querySelector('.timeRange').value;
+            
+            const entry = document.createElement('div');
+            entry.className = 'schedule-entry';
+            entry.innerHTML = `
+                <input type="text" placeholder="Day of Week (e.g., Monday)" class="dayOfWeek" value="${lastDayOfWeek}" required>
+                <input type="date" class="dateNum" required>
+                <input type="text" placeholder="Time Range (e.g., 10:00 AM - 12:00 PM)" class="timeRange" value="${lastTimeRange}" required>
+            `;
+            container.appendChild(entry);
+        }
+
+        function formatDate(dateString) { // dateString is 'YYYY-MM-DD'
+            if (!dateString) return '';
+            const [year, month, day] = dateString.split('-');
+            const date = new Date(year, month - 1, day);
+            const options = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' };
+            return new Intl.DateTimeFormat('en-US', options).format(date);
+        }
+
+        document.getElementById('courseForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('title').value;
+            const locationName = document.getElementById('locationName').value;
+            const googleMapUrl = document.getElementById('googleMapUrl').value;
+            const locationStreet = document.getElementById('locationStreet').value;
+            const locationCityStateZip = document.getElementById('locationCityStateZip').value;
+            
+            const scheduleEntries = document.querySelectorAll('.schedule-entry');
+            let scheduleRows = '';
+            
+            scheduleEntries.forEach(entry => {
+                const dayOfWeek = entry.querySelector('.dayOfWeek').value;
+                const dateNumValue = entry.querySelector('.dateNum').value;
+                const dateNum = formatDate(dateNumValue);
+                const timeRange = entry.querySelector('.timeRange').value;
+                
+                scheduleRows += `<tr>
+<td style="padding: 8px 6px; border-bottom: 1px solid #e4e4e4; color: #006747;">${dayOfWeek}</td>
+<td style="padding: 8px 6px; border-bottom: 1px solid #e4e4e4; color: #006747;">${dateNum}</td>
+<td style="padding: 8px 6px; border-bottom: 1px solid #e4e4e4; color: #006747;">${timeRange} EST</td>
+</tr>
+`;
+            });
+            
+            const htmlOutput = `<div style="width: 100%; max-width: 720px; margin: 40px auto; font-family: Arial, sans-serif; color: #222;">
+<div style="text-align: center;"><hr style="border: 0; border-top: 5px solid #006747; margin: 24px 0 18px 0;" />
+<h2 style="color: #006747; margin-bottom: 6px; font-size: 2rem;">Welcome to ${title}!</h2>
+<p style="margin-top: 16px; font-size: 1.1rem;">Thank you for enrolling in this OLLI-USF course! <br />Important details about your classes are below.</p>
+</div>
+<div style="background: #f3f8f5; border-radius: 12px; padding: 18px 20px; margin: 36px auto 32px auto; max-width: 560px; text-align: center;">
+<h3 style="margin: 0 0 12px 0; color: #006747;">Class Location</h3>
+<a class="inline_disabled" style="display: inline-block; background: #006747; color: #fff; padding: 11px 32px; border-radius: 6px; text-decoration: none; font-size: 1.11rem; margin: 12px 0;" href="${googleMapUrl}" target="_blank" rel="noopener">${locationName}</a>
+<div style="margin-top: 14px; font-size: 1rem; color: #222;"><span>${locationStreet}</span><br /><span>${locationCityStateZip}</span></div>
+<hr style="border: 0; border-top: 5px solid #006747; margin: 32px 0 18px 0;" />
+<div style="background: #f3f8f5; border-radius: 12px; padding: 18px 20px; margin: 0 auto 32px auto; max-width: 560px;">
+<h3 style="text-align: center; color: #006747; margin-bottom: 10px; margin-top: 0;">Course Schedule</h3>
+<table style="width: 100%; border-collapse: collapse; font-size: 1.06rem; background: #e1f3ed; border-radius: 7px; overflow: hidden;">
+<thead>
+<tr>
+<th style="background: #006747; color: #ffffff; padding: 10px 6px; text-align: left;">Day</th>
+<th style="background: #006747; color: #ffffff; padding: 10px 6px; text-align: left;">Date</th>
+<th style="background: #006747; color: #ffffff; padding: 10px 6px; text-align: left;">Time (EST)</th>
+</tr>
+</thead>
+<tbody>
+${scheduleRows}</tbody>
+</table>
+</div>
+</div>
+<div style="margin: 0 auto 10px auto; max-width: 560px; text-align: center;">
+<h3 style="color: #006747; margin-bottom: 8px; margin-top: 10px;">More Information</h3>
+<p style="margin-bottom: 0; font-size: 1.04rem;">Additional course details, resources, and announcements will be shared via email from <span style="text-decoration: underline;">notifications@instructure.com</span> as the course start date approaches. If you have any questions, please contact us at <a href="mailto:OLLIRegistration@usf.edu" target="_blank" rel="noopener"><span style="text-decoration: underline;"><strong>OLLIRegistration@usf.edu</strong></span></a>&nbsp;</p>
+<p style="margin-bottom: 0; font-size: 1.04rem;"><img src="https://ctpe-bucket-general.s3.us-east-2.amazonaws.com/OLLI/olli-usf-h-logo.png" alt="osher-lifelong-learning-institute-lightbg-2c-rgb-h.png" width="387" height="116" data-api-endpoint="https://usfcorporatetraining.instructure.com/api/v1/courses/4124/files/250179" data-api-returntype="File" /></p>
+</div>
+</div>`;
+            
+            document.getElementById('outputHtml').textContent = htmlOutput;
+            document.getElementById('outputSection').classList.add('active');
+            document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        function copyToClipboard() {
+            const htmlText = document.getElementById('outputHtml').textContent;
+            const btn = document.getElementById('copyBtn');
+            
+            navigator.clipboard.writeText(htmlText).then(() => {
+                const originalText = btn.textContent;
+                btn.classList.add('copied');
+                btn.textContent = '✓ Copied to Clipboard!';
+                
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.textContent = originalText;
+                }, 2500);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy to clipboard. Please try selecting and copying manually.');
+            });
+        }
+
+        function resetForm() {
+            document.getElementById('courseForm').reset();
+            document.getElementById('scheduleContainer').innerHTML = `
+                <div class="schedule-entry">
+                    <input type="text" placeholder="Day of Week (e.g., Monday)" class="dayOfWeek" required>
+                    <input type="date" class="dateNum" required>
+                    <input type="text" placeholder="Time Range (e.g., 10:00 AM - 12:00 PM)" class="timeRange" required>
+                </div>
+            `;
+            document.getElementById('outputSection').classList.remove('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function populateAnnouncementForm() {
+            // Title
+            document.getElementById('announcementTitle').value = document.getElementById('title').value;
+
+            // Location Name
+            document.getElementById('announcementLocationName').value = document.getElementById('locationName').value;
+
+            // Google Maps URL
+            document.getElementById('announcementMapUrl').value = document.getElementById('googleMapUrl').value;
+
+            // Location Address
+            const street = document.getElementById('locationStreet').value;
+            const cityStateZip = document.getElementById('locationCityStateZip').value;
+            if (street && cityStateZip) {
+                document.getElementById('announcementLocationAddress').value = `${street}, ${cityStateZip}`;
+            } else {
+                document.getElementById('announcementLocationAddress').value = street || cityStateZip;
+            }
+
+            // Start Date
+            const firstDateInput = document.querySelector('#scheduleContainer .schedule-entry .dateNum');
+            if (firstDateInput && firstDateInput.value) {
+                document.getElementById('announcementStartDate').value = formatDate(firstDateInput.value);
+            } else {
+                document.getElementById('announcementStartDate').value = '';
+            }
+
+            // Start Time
+            const firstTimeInput = document.querySelector('#scheduleContainer .schedule-entry .timeRange');
+            if (firstTimeInput) {
+                const timeRange = firstTimeInput.value;
+                const startTime = timeRange.split('-')[0].trim();
+                document.getElementById('announcementStartTime').value = startTime;
+            }
+        }
+
+        function toggleAnnouncementForm() {
+            const checkbox = document.getElementById('announcementCheckbox');
+            const form = document.getElementById('announcementForm');
+            form.style.display = checkbox.checked ? 'block' : 'none';
+            
+            if (checkbox.checked) {
+                populateAnnouncementForm();
+            }
+
+            if (!checkbox.checked) {
+                document.getElementById('announcementOutputSection').classList.remove('active');
+            }
+        }
+
+        function toggleAnnouncementFields() {
+            const checkbox = document.getElementById('northwesternCheckbox');
+            const f2fFields = document.getElementById('f2f_fields');
+            f2fFields.style.display = checkbox.checked ? 'none' : 'block';
+        }
+
+        document.getElementById('announcementForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const isNorthwestern = document.getElementById('northwesternCheckbox').checked;
+
+            const title = document.getElementById('announcementTitle').value;
+            const startDate = document.getElementById('announcementStartDate').value;
+            const startTime = document.getElementById('announcementStartTime').value;
+
+            let outputText = '';
+
+            if (isNorthwestern) {
+                const template = `OLLI-USF Class Reminder - {title}
+Your Osher Online course hosted by the Osher Online team at Northwestern University, via Zoom, starts at {start_time}. tomorrow, {start_date}.
+
+You should have received an e-mail containing the login information you need to access your course materials and Zoom classroom(s).
+
+If you have any questions, please contact the Osher Online team (312) 503-5555 or e-mail osheronline@northwestern.edu. 
+
+Thank you for your participation in OLLI. Enjoy your course!`;
+                outputText = template
+                    .replace('{title}', title)
+                    .replace('{start_date}', startDate)
+                    .replace('{start_time}', startTime);
+            } else {
+                const locationName = document.getElementById('announcementLocationName').value;
+                const locationAddress = document.getElementById('announcementLocationAddress').value;
+                const mapUrl = document.getElementById('announcementMapUrl').value;
+                const parkingNotes = document.getElementById('announcementParkingNotes').value;
+
+                const template = `OLLI-USF Class Reminder & Parking Instructions
+Hello OLLI-USF members!
+
+Your course {title} is scheduled to begin {start_date} at {start_time} EST
+
+Your offering will be held at {location_name} ({location_address}) (Google Maps Link here) {map_url}.
+
+{parking_notes}
+
+Please let us know if you have any questions at OLLIRegistration@usf.edu 
+
+Keep learning!
+OLLI-USF`;
+                outputText = template
+                    .replace('{title}', title)
+                    .replace('{start_date}', startDate)
+                    .replace('{start_time}', startTime)
+                    .replace('{location_name}', locationName)
+                    .replace('{location_address}', locationAddress)
+                    .replace('{map_url}', mapUrl)
+                    .replace('{parking_notes}', parkingNotes);
+            }
+
+            document.getElementById('announcementOutputText').textContent = outputText;
+            const outputSection = document.getElementById('announcementOutputSection');
+            outputSection.classList.add('active');
+            outputSection.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        function copyAnnouncementToClipboard() {
+            const text = document.getElementById('announcementOutputText').textContent;
+            const btn = document.getElementById('copyAnnouncementBtn');
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = btn.textContent;
+                btn.classList.add('copied');
+                btn.textContent = '✓ Copied to Clipboard!';
+                
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.textContent = originalText;
+                }, 2500);
+            }).catch(err => {
+                console.error('Failed to copy announcement:', err);
+                alert('Failed to copy to clipboard. Please try selecting and copying manually.');
+            });
+        }
+
+        function resetAnnouncementForm() {
+            document.getElementById('announcementForm').reset();
+            document.getElementById('f2f_fields').style.display = 'block';
+            document.getElementById('announcementOutputSection').classList.remove('active');
+            document.getElementById('announcementCheckbox').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function formatDateMMDDYY(dateString) { // YYYY-MM-DD
+            if (!dateString) return '';
+            const [year, month, day] = dateString.split('-');
+            return `${month}${day}${year.substring(2)}`;
+        }
+
+        function generateCourseCode() {
+            const shortenedTitle = document.getElementById('shortenedTitle').value.replace(/\s+/g, '').toUpperCase();
+            const shortenedLocation = document.getElementById('shortenedLocation').value.replace(/\s+/g, '').toUpperCase();
+            const firstDateInput = document.querySelector('#scheduleContainer .schedule-entry .dateNum');
+            
+            if (!shortenedTitle || !shortenedLocation || !firstDateInput || !firstDateInput.value) {
+                document.getElementById('courseCodeOutput').textContent = 'Please fill in Shortened Title, Shortened Location, and at least one Start Date.';
+                return;
+            }
+
+            const formattedDate = formatDateMMDDYY(firstDateInput.value);
+
+            const courseCode = `OLLI--${shortenedTitle}--${shortenedLocation}--${formattedDate}`;
+            
+            document.getElementById('courseCodeOutput').textContent = courseCode;
+        }
+
+        function toggleCourseCodeGenerator() {
+            const checkbox = document.getElementById('courseCodeCheckbox');
+            const outputSection = document.getElementById('courseCodeOutputSection');
+            const courseCodeInputs = document.getElementById('courseCodeInputs');
+            
+            if(checkbox.checked) {
+                courseCodeInputs.style.display = 'block'; // Show the new input fields
+                outputSection.classList.add('active'); // Still show the output section
+                generateCourseCode(); // Generate code immediately
+                outputSection.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                courseCodeInputs.style.display = 'none'; // Hide the new input fields
+                outputSection.classList.remove('active');
+            }
+        }
+
+        function copyCourseCodeToClipboard() {
+            const text = document.getElementById('courseCodeOutput').textContent;
+            const btn = document.getElementById('copyCourseCodeBtn');
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = btn.innerHTML;
+                btn.classList.add('copied');
+                btn.innerHTML = '✓ Copied to Clipboard!';
+                
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.innerHTML = originalText;
+                }, 2500);
+            }).catch(err => {
+                console.error('Failed to copy course code:', err);
+                alert('Failed to copy to clipboard. Please try selecting and copying manually.');
+            });
+        }
+    </script>
+</body>
+</html>
