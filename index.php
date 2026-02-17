@@ -419,7 +419,7 @@
         
         <section>
             <h2>Experience</h2>
-            <div class="experience-card">
+            <div class="experience-grid">
                 <?php include("experiences-snippets.html"); ?>
                 <?php include("experiences.html"); ?>
                 
